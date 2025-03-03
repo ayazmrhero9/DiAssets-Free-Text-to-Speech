@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ElevenLabs Text-to-Speech Converter</title>
+    <style>
+        :root {
+            --primary-color: #7C3AED;
+            --primary-light: #C4B5FD;
+            --primary-dark: #5B21B6;
+            --accent-color: #EC4899;
+            --background-color: #F9FAFB;
+            --card-background: #ffffff;
+            --text-color: #1F2937;
+            --text-light: #6B7280;
+            --border-radius: 16px;
+            --box-shadow: 0 10px 25px rgba(124, 58, 237, 0.1);
+            --gradient-bg: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(124, 58, 237, 0.15) 0%, transparent 30%),
+                radial-gradient(circle at 70% 60%, rgba(236, 72, 153, 0.1) 0%, transparent 30%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .blob {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            filter: blur(80px);
+            opacity: 0.3;
+            z-index: -1;
+        }
+
+        .blob-1 {
+            background: rgba(124, 58, 237, 0.6);
+            top: -100px;
+            right: -150px;
+            border-radius: 100% 0% 100% 0%;
+        }
+
+        .blob-2 {
+            background: rgba(236, 72, 153, 0.5);
+            bottom: -100px;
+            left: -150px;
+            border-radius: 50% 50% 50% 0%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 30%;
+            width: 40%;
+            height: 4px;
+            background: var(--gradient-bg);
+            border-radius: 10px;
+        }
+
+        h1 {
+            background: var(--gradient-bg);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            letter-spacing: -0.01em;
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            font-size: 1.1rem;
+            max-width: 80%;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 40px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(124, 58, 237, 0.1);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: var(--gradient-bg);
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background-color: #F9FAFB;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+            outline: none;
+            background-color: white;
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        button {
+            border: none;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            display: block;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .btn-primary {
+            background: var(--gradient-bg);
+            color: white;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.4);
+        }
+
+        .btn-secondary {
+            background-color: #F3F4F6;
+            color: #4B5563;
+            margin-top: 15px;
+            border: 1px solid #E5E7EB;
+        }
+
+        .btn-secondary:hover {
+            background-color: #E5E7EB;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 25px 0;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(124, 58, 237, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .audio-output {
+            margin-top: 30px;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px dashed #E5E7EB;
+        }
+
+        audio {
+            width: 100%;
+            border-radius: 12px;
+            margin-top: 10px;
+            height: 50px;
+        }
+
+        #audioPlayer {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-weight: 500;
+            display: flex;
+            align-items: flex-start;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .alert-error {
+            background-color: #FEF2F2;
+            color: #B91C1C;
+            border: 1px solid #FEE2E2;
+        }
+
+        .alert-success {
+            background-color: #F0FDF4;
+            color: #166534;
+            border: 1px solid #DCFCE7;
+        }
+    </style>
+</head>
+<body>
+    <script type='text/javascript' src='//matterssharplyraw.com/ab/56/fe/ab56fe05388ab7809b85bb9c877d44b6.js'></script>
+    <script type="text/javascript">
+	atOptions = {
+		'key' : '2e8a253468d31588b64901156a9c9363',
+		'format' : 'iframe',
+		'height' : 90,
+		'width' : 728,
+		'params' : {}
+	};
+</script>
+<script type="text/javascript" src="//matterssharplyraw.com/2e8a253468d31588b64901156a9c9363/invoke.js"></script>
+    <div class="container">
+        <!-- Decorative blobs -->
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+
+        <header class="animate">
+            <h1>DiAssets</h1>
+            <p class="subtitle">Transform your text into natural-sounding speech with ElevenLabs AI</p>
+        </header>
+
+        <div class="card animate">
+            <div id="messageContainer" class="alert" style="display: none;"></div>
+
+            <section>
+                <h2 class="section-title">Credentials</h2>
+                <div class="input-group">
+                    <label for="apiKey">
+                        ElevenLabs API Key
+                        <span class="tooltip">?
+                            <span class="tooltiptext">Your API key can be found in your ElevenLabs account dashboard</span>
+                        </span>
+                    </label>
+                    <div class="api-key-container">
+                        <input type="password" id="apiKey" placeholder="Enter your ElevenLabs API key">
+                        <span id="apiKeyVisibility" onclick="toggleApiKeyVisibility()">👁️</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="voiceId">
+                        Voice ID
+                        <span class="tooltip">?
+                            <span class="tooltiptext">Found in your ElevenLabs voice settings</span>
+                        </span>
+                    </label>
+                    <input type="text" id="voiceId" placeholder="Enter Voice ID (e.g., 21m00Tcm4TlvDq8ikWAM)">
+                </div>
+            </section>
+
+            <section>
+                <h2 class="section-title">Your Content</h2>
+                <div class="input-group">
+                    <label for="textInput">Text to Convert</label>
+                    <textarea id="textInput" placeholder="Enter your text here..."></textarea>
+                </div>
+
+                <button id="convertButton" class="btn-primary pulse" onclick="convertTextToSpeech()">Convert to Speech</button>
+                <button id="clearButton" class="btn-secondary" onclick="clearInputs()">Clear All</button>
+            </section>
+
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Creating your audio masterpiece...</p>
+            </div>
+
+            <div class="audio-output">
+                <audio id="audioPlayer" controls></audio>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ELEVEN_LABS_API = 'https://api.elevenlabs.io/v1/text-to-speech';
+
+        async function convertTextToSpeech() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const voiceId = document.getElementById('voiceId').value.trim();
+            const text = document.getElementById('textInput').value.trim();
+            const messageContainer = document.getElementById('messageContainer');
+            const loading = document.querySelector('.loading');
+            const audioPlayer = document.getElementById('audioPlayer');
+
+            // Reset UI
+            messageContainer.style.display = 'none';
+            audioPlayer.style.display = 'none';
+
+            // Validate inputs
+            if (!apiKey || !voiceId || !text) {
+                showMessage('Please fill in all required fields', 'error');
+                return;
+            }
+
+            try {
+                // Show loading state
+                loading.style.display = 'block';
+
+                // Make API request
+                const response = await fetch(`${ELEVEN_LABS_API}/${voiceId}`, {
+                    method: 'POST',
+                    headers: {
+                        'xi-api-key': apiKey,
+                        'Content-Type': 'application/json',
+                        'Accept': 'audio/mpeg'
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        model_id: "eleven_multilingual_v2",
+                        voice_settings: {
+                            stability: 0.5,
+                            similarity_boost: 0.5
+                        }
+                    })
+                });
+
+                // Handle response
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to generate audio.');
+                }
+
+                // Convert response to audio
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+                audioPlayer.src = audioUrl;
+                audioPlayer.style.display = 'block';
+
+                showMessage('Audio generated successfully!', 'success');
+            } catch (err) {
+                console.error('Error:', err);
+                showMessage(`Error: ${err.message}`, 'error');
+            } finally {
+                // Hide loading state
+                loading.style.display = 'none';
+            }
+        }
+
+        function showMessage(message, type = 'error') {
+            const messageContainer = document.getElementById('messageContainer');
+            messageContainer.style.display = 'block';
+            messageContainer.className = `alert alert-${type}`;
+            messageContainer.textContent = message;
+        }
+
+        function clearInputs() {
+            document.getElementById('apiKey').value = '';
+            document.getElementById('voiceId').value = '';
+            document.getElementById('textInput').value = '';
+            document.getElementById('audioPlayer').style.display = 'none';
+            document.getElementById('messageContainer').style.display = 'none';
+        }
+
+        function toggleApiKeyVisibility() {
+            const apiKeyInput = document.getElementById('apiKey');
+            const visibilityToggle = document.getElementById('apiKeyVisibility');
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+                visibilityToggle.textContent = '👁️';
+            } else {
+                apiKeyInput.type = 'password';
+                visibilityToggle.textContent = '👁️';
+            }
+        }
+    </script>
+    <script type="text/javascript">
+	atOptions = {
+		'key' : '2e8a253468d31588b64901156a9c9363',
+		'format' : 'iframe',
+		'height' : 90,
+		'width' : 728,
+		'params' : {}
+	};
+</script>
+<script type="text/javascript" src="//matterssharplyraw.com/2e8a253468d31588b64901156a9c9363/invoke.js"></script>
+</body>
+</html>
